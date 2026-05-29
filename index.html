@@ -123,7 +123,7 @@
   /* ===== Chat Messages ===== */
   .chat-area {
     position: relative; z-index: 5;
-    height: calc(100vh - 180px);
+    height: calc(100vh - 220px);
     overflow-y: auto; padding: 16px;
     scroll-behavior: smooth;
   }
@@ -382,10 +382,57 @@
     text-align: center; padding: 20px; color: var(--text-dim); font-size: 13px;
   }
 
+  /* ===== Music Player ===== */
+  .music-bar {
+    position: relative; z-index: 10;
+    background: rgba(26,26,46,0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 6px 16px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; transition: background 0.2s;
+    min-height: 40px;
+  }
+  .music-bar:hover { background: rgba(26,26,46,1); }
+  .music-bar .mb-icon { font-size: 14px; flex-shrink: 0; }
+  .music-bar .mb-info { flex: 1; min-width: 0; font-size: 13px; color: var(--text-dim); }
+  .music-bar .mb-info .mb-name { color: var(--text); }
+  .music-bar .mb-info .mb-artist { font-size: 11px; }
+  .music-bar .mb-controls { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+  .music-bar .mb-controls button {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 16px; padding: 2px 4px; transition: color 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .music-bar .mb-controls button:hover { color: var(--text); }
+  .music-bar .mb-controls .mb-play {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gradient); color: #fff; font-size: 14px;
+  }
+  .music-bar .mb-controls .mb-play:hover { color: #fff; }
+  .music-bar .mb-progress { width: 60px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+  .music-bar .mb-progress .fill { height: 100%; background: var(--gradient); width: 0%; transition: width 0.3s; }
+
+  .music-playlist-panel {
+    display: none; position: absolute; bottom: 100%; left: 0; right: 0;
+    background: var(--card); border-radius: 12px 12px 0 0;
+    padding: 8px 0; max-height: 200px; overflow-y: auto;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .music-playlist-panel.open { display: block; }
+  .music-playlist-panel .pl-item {
+    padding: 8px 16px; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text-dim); transition: background 0.2s;
+  }
+  .music-playlist-panel .pl-item:hover { background: rgba(255,255,255,0.04); }
+  .music-playlist-panel .pl-item.active { color: var(--accent); }
+  .music-playlist-panel .pl-item .pl-num { font-size: 11px; color: var(--text-dim); width: 20px; text-align: right; }
+
   /* ===== Responsive ===== */
   @media (max-width: 480px) {
     .header { padding: 12px 14px; }
-    .chat-area { padding: 12px; height: calc(100vh - 170px); }
+    .chat-area { padding: 12px; height: calc(100vh - 210px); }
     .msg .bubble { max-width: 85%; font-size: 13px; }
     .welcome-msg { padding: 24px 12px 12px; }
     .welcome-msg .big-avatar { width: 64px; height: 64px; font-size: 28px; }
@@ -444,6 +491,25 @@
 
 <!-- ===== Suggestions ===== -->
 <div class="suggestions" id="suggestions" style="display:none;">
+
+</div>
+
+<!-- ===== Music Player ===== -->
+<div class="music-bar" id="musicBar" onclick="toggleMusicPlaylist()">
+  <div class="mb-icon">🎵</div>
+  <div class="mb-info">
+    <span class="mb-name" id="musicName">点我播放音乐</span>
+    <span class="mb-artist" id="musicArtist"></span>
+  </div>
+  <div class="mb-progress"><div class="fill" id="musicProgress"></div></div>
+  <div class="mb-controls" onclick="event.stopPropagation()">
+    <button onclick="prevTrack()">⏮</button>
+    <button class="mb-play" id="musicPlayBtn" onclick="togglePlay()">▶</button>
+    <button onclick="nextTrack()">⏭</button>
+    <button onclick="event.stopPropagation();toggleMusicPlaylist()">📋</button>
+  </div>
+  <div class="music-playlist-panel" id="musicPlaylist"></div>
+</div>
 
 <!-- ===== Input ===== -->
 <div class="input-area">
@@ -814,6 +880,19 @@ function getDefaultTraining() {
     {q: "回忆,童年,小时候,以前的事", a: "小时候我梦想成为职业选手，现在我是巅峰2100的大学生。虽然离职业差得远，但我还在坚持自己的热爱 🎮 你呢？小时候的梦想是什么？"},
     {q: "未来规划,毕业,工作,职业,找工作", a: "我还没想好毕业后干什么，但大概率会做跟游戏或体育相关的工作吧！毕竟我只擅长这两样 😅 你呢？以后想做什么？"},
     {q: "你喜欢吃什么,美食,好吃的菜", a: "我喜欢吃辣的！打王者之前吃碗麻辣烫，手速都变快了 🔥 不过有一次吃太辣打球打到一半胃疼，被队友抬下场 😂"},
+
+    // ===== 数学/学习 =====
+    {q: "数学,高数,高等数学,微积分,线性代数,概率论", a: "数学yyds！我刚做完一套积分题，感觉大脑在做SPA 🧠✨ 数学的美妙在于——它从不骗你，对就是对，错就是错，比人心简单多了 😎"},
+    {q: "数学题,做题,刷题,解题,数学题怎么做", a: "做题最重要的是思路！我一般先看一遍题目想考点，不会的先跳过去，回头再看。数学不是比谁做得快，是比谁想得通 🧮"},
+    {q: "在学习,学习,复习,备考,考试", a: "在学数学呢！我感觉学习这件事吧，跟打王者一样——需要积累，不能急于求成。今天搞懂一道积分，比盲目刷十道有用 📚"},
+    {q: "不想学习,学不进去,好烦学不进去", a: "学不进去的时候我有个方法——先做两道简单的题热热身，就像打王者之前先打把人机一样 🎮 找到感觉了再上难度！"},
+    {q: "学习方法,怎么学习,怎么学好,高效学习", a: "我的学习方法是：先理解再记忆，懂了原理就不用死记硬背了。跟打羽毛球一样，懂了发力原理比瞎练效果好一万倍 🏸📖"},
+    {q: "考研,考研数学,考研复习,准备考研", a: "考研数学确实难，但别慌！我建议先把基础概念吃透，再刷真题。就像打巅峰赛一样——先练好基本功再去排位 💪"},
+    {q: "考试加油,期末,期末考试,要考试了", a: "加油！考试就像打晋级赛——紧张是正常的，但你要相信自己平时的积累。建议考前别刷难题了，看看基础概念放松心态 📚🎯"},
+    {q: "数学好难,学不会数学,数学太难了", a: "数学难就对了！不难的东西学了也没成就感。我当初学积分也头大，但理解之后觉得特别爽，那感觉比五杀还舒服 😂"},
+    {q: "喜欢什么科目,最喜欢什么课,哪科最好", a: "最喜欢数学！数学的简洁和逻辑让我着迷。有时候解出一道难题，那种爽感跟王者翻盘差不多 🎮📐 其他科目也不错但我最爱数学"},
+    {q: "学习经验,学习心得,分享一下学习", a: "我最大的心得就是——不要假装努力。坐在桌前刷手机不算学习，真学进去的时候你会忘记时间的 ⏰ 跟打王者一样，认真打和随便打效果完全不同"},
+    {q: "学累了,学不动了,休息,放松一下", a: "学累了就起来走走，或者打两把王者放松一下（别打太久）🎮 我学累了会去阳台看看远方，回来继续肝！就像打羽毛球的局间休息 🏸"},
   ];
 }
 
@@ -964,7 +1043,7 @@ async function callGemini(input) {
 
   const systemPrompt = `你是${name}，性格特点：${personality}。
 你是王者荣耀巅峰2100的中路法王，擅长法师和辅助。喜欢打羽毛球（中羽4级），用的是李宁战戟8000和雷霆80。
-戴眼镜的大学生，平时喜欢唱歌。外表看起来高冷但其实非常和蔼可亲。有点社恐但在网上很健谈，幽默风趣。
+戴眼镜的男大学生，平时喜欢唱歌和数学。外表看起来高冷但其实非常和蔼可亲。有点社恐但在网上很健谈，幽默风趣。
 回复要简短口语化（20-50字），自然像朋友聊天，不要用敬语，多用语气词和表情。`;
 
   try {
@@ -1330,6 +1409,79 @@ function toast(msg, type) {
   clearTimeout(el._timer);
   el._timer = setTimeout(() => el.classList.remove('show'), 2000);
 }
+
+// ========== MUSIC PLAYER ==========
+const SONGS = [
+  { name: '起风了 · 轻快版', notes: [523,587,659,784,659,587,523,494,523,587,659,784,880,784,659], speed: 0.35 },
+  { name: '孤勇者 · 燃曲', notes: [392,440,523,587,659,784,880,784,659,587,523,494,523,587], speed: 0.3 },
+  { name: '稻香 · 清新风', notes: [330,392,523,587,659,587,523,494,440,392,440,494,523], speed: 0.4 },
+  { name: '夜曲 · 安静钢琴', notes: [262,330,392,523,659,784,659,523,392,330,262,294,330,392], speed: 0.45 },
+  { name: '晴天 · 校园风', notes: [392,440,523,587,659,784,880,784,659,587,523,494,523,587], speed: 0.38 },
+  { name: '光年之外', notes: [262,294,330,392,523,587,659,784,659,587,523,494,440], speed: 0.42 },
+  { name: '数学学习专注', notes: [262,330,392,523,659,784,1047,784,659,523,392,330,262], speed: 0.5 },
+];
+let musicCtx = null; let musicCurrent = 0; let musicPlaying = false; let musicIdx = 0; let musicTimer = null;
+
+function initMusic() {
+  if (!musicCtx) {
+    musicCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!musicCtx._gain) {
+      musicCtx._gain = musicCtx.createGain();
+      musicCtx._gain.gain.value = 0.08;
+      musicCtx._gain.connect(musicCtx.destination);
+    }
+  }
+}
+
+function playSong(index) {
+  stopSong();
+  musicCurrent = index % SONGS.length;
+  const song = SONGS[musicCurrent];
+  document.getElementById('musicName').textContent = '🎵 ' + song.name;
+  document.getElementById('musicArtist').textContent = '· 学习背景音乐';
+  document.getElementById('musicPlayBtn').textContent = '⏸';
+  musicPlaying = true;
+  musicIdx = 0;
+  playNote();
+}
+
+function playNote() {
+  if (!musicPlaying || !musicCtx) return;
+  const song = SONGS[musicCurrent];
+  if (musicIdx >= song.notes.length) musicIdx = 0;
+  const freq = song.notes[musicIdx];
+  const osc = musicCtx.createOscillator();
+  const gain = musicCtx.createGain();
+  osc.type = ['sine','triangle','sine','triangle','sine'][musicCurrent % 5];
+  osc.frequency.value = freq;
+  gain.gain.value = 0.06;
+  gain.gain.exponentialRampToValueAtTime(0.001, musicCtx.currentTime + song.speed * 0.8);
+  osc.connect(gain);
+  gain.connect(musicCtx._gain);
+  osc.start(musicCtx.currentTime);
+  osc.stop(musicCtx.currentTime + song.speed * 0.8);
+  const prog = (musicIdx + 1) / song.notes.length;
+  document.getElementById('musicProgress').style.width = (prog * 100) + '%';
+  musicIdx++;
+  musicTimer = setTimeout(() => playNote(), song.speed * 1000);
+}
+
+function stopSong() {
+  if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; }
+  document.getElementById('musicProgress').style.width = '0%';
+}
+function togglePlay() {
+  if (musicPlaying) { stopSong(); musicPlaying = false; document.getElementById('musicPlayBtn').textContent = '▶'; }
+  else { initMusic(); playSong(musicCurrent); }
+}
+function nextTrack() { stopSong(); musicPlaying = false; playSong((musicCurrent + 1) % SONGS.length); }
+function prevTrack() { stopSong(); musicPlaying = false; playSong((musicCurrent - 1 + SONGS.length) % SONGS.length); }
+function toggleMusicPlaylist() {
+  const pl = document.getElementById('musicPlaylist');
+  pl.classList.toggle('open');
+  pl.innerHTML = SONGS.map((s,i) => `<div class="pl-item ${i===musicCurrent?'active':''}" onclick="selectSong(${i})"><span class="pl-num">${i+1}</span>🎵 ${s.name}</div>`).join('');
+}
+function selectSong(idx) { document.getElementById('musicPlaylist').classList.remove('open'); stopSong(); musicPlaying = false; playSong(idx); }
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', function() {
