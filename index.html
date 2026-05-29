@@ -418,6 +418,7 @@
     <button class="header-btn" onclick="clearChat()" title="清空聊天">🗑️</button>
     <button class="header-btn" onclick="openSettings()" title="设置">⚙️</button>
   </div>
+  <div style="position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.35);pointer-events:none;">🔒 聊天内容仅本地可见 · 数据存储在您浏览器中</div>
 </div>
 
 <!-- ===== Chat Area ===== -->
@@ -457,7 +458,6 @@
     <textarea id="chatInput" rows="1" placeholder="💡 我可以：想文案 成语接龙 聊天 聊王者 聊羽毛球 反问问题 唱首歌 更多..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
   </div>
-  <div style="text-align:center;font-size:11px;color:var(--text-dim);padding:6px 0 2px;opacity:0.5;">🔒 聊天内容仅本地可见，数据存储在您的浏览器中</div>
 </div>
 
 <!-- ===== Settings Modal ===== -->
@@ -837,12 +837,16 @@ function getDefaultTraining() {
   ];
 }
 
+function ensureIds(data) {
+  return data.map(t => { if (!t.id) t.id = genId(); return t; });
+}
+
 function loadTraining() {
   try {
-    const defaults = getDefaultTraining();
+    const defaults = ensureIds(getDefaultTraining());
     const raw = localStorage.getItem(TRAIN_KEY);
     if (raw) {
-      const existing = JSON.parse(raw);
+      let existing = ensureIds(JSON.parse(raw));
       // Merge new defaults into existing (avoid duplicates by question keyword)
       const existingQs = new Set(existing.map(t => t.q.toLowerCase()));
       let added = 0;
@@ -866,6 +870,8 @@ function saveTrainingData() {
   localStorage.setItem(TRAIN_KEY, JSON.stringify(trainingData));
 }
 let trainingData = loadTraining();
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
 function findTrainingMatch(text) {
   const lower = text.toLowerCase();
@@ -1258,22 +1264,36 @@ function switchTrainTab(tab) {
 function saveTraining() {
   const q = document.getElementById('trainQuestion').value.trim();
   const a = document.getElementById('trainAnswer').value.trim();
+  const editId = document.getElementById('trainQuestion').dataset.editId;
   if (!q) { toast('请输入问题或关键词', 'error'); return; }
   if (!a) { toast('请输入回答', 'error'); return; }
 
-  // Check if already exists
-  const existing = trainingData.findIndex(t => t.q.toLowerCase() === q.toLowerCase());
-  if (existing >= 0) {
-    if (!confirm('已存在相同关键词，是否覆盖？')) return;
-    trainingData[existing].a = a;
-    trainingData[existing].updatedAt = Date.now();
+  if (editId) {
+    // Updating existing entry
+    const idx = trainingData.findIndex(t => t.id === editId);
+    if (idx >= 0) {
+      trainingData[idx].q = q;
+      trainingData[idx].a = a;
+      trainingData[idx].updatedAt = Date.now();
+    }
+    delete document.getElementById('trainQuestion').dataset.editId;
   } else {
-    trainingData.push({ q, a, createdAt: Date.now(), updatedAt: Date.now() });
+    // Check if already exists by question text
+    const existing = trainingData.findIndex(t => t.q.toLowerCase() === q.toLowerCase());
+    if (existing >= 0) {
+      if (!confirm('已存在相同关键词，是否覆盖？')) return;
+      trainingData[existing].q = q;
+      trainingData[existing].a = a;
+      trainingData[existing].updatedAt = Date.now();
+    } else {
+      trainingData.push({ id: genId(), q, a, createdAt: Date.now(), updatedAt: Date.now() });
+    }
   }
 
   saveTrainingData();
   document.getElementById('trainQuestion').value = '';
   document.getElementById('trainAnswer').value = '';
+  delete document.getElementById('trainQuestion').dataset.editId;
   renderTrainingList();
   toast('训练已保存 ✅ 共' + trainingData.length + '条');
 }
@@ -1288,11 +1308,12 @@ function deleteTraining(idx) {
 
 function editTraining(idx) {
   const item = trainingData[idx];
+  // Ensure item has an id (for backward compatibility with old data)
+  if (!item.id) { item.id = genId(); saveTrainingData(); }
   document.getElementById('trainQuestion').value = item.q;
   document.getElementById('trainAnswer').value = item.a;
+  document.getElementById('trainQuestion').dataset.editId = item.id;
   switchTrainTab('add');
-  // Remove old one, will be overwritten on save
-  trainingData.splice(idx, 1);
   toast('编辑中，修改后点保存即可');
 }
 
