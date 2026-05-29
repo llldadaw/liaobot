@@ -444,7 +444,7 @@
 <!-- ===== Input ===== -->
 <div class="input-area">
   <div class="input-wrap">
-    <textarea id="chatInput" rows="1" placeholder="和略略略大王聊聊天..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <textarea id="chatInput" rows="1" placeholder="💡 我可以：想文案 成语接龙 聊天 聊王者 聊羽毛球 反问问题 唱首歌 安慰人 更多..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
   </div>
 </div>
@@ -454,10 +454,6 @@
   <div class="modal">
     <button class="close-btn" onclick="closeSettings()">✕</button>
     <h3>⚙️ 设置</h3>
-    <div class="form-group">
-      <label>机器人名字</label>
-      <input type="text" id="botName" value="略略略大王">
-    </div>
     <div class="form-group">
       <label>AI 接口密钥（可选，填了回复更智能）</label>
       <input type="password" id="geminiKey" placeholder="输入 Gemini API Key">
@@ -519,6 +515,11 @@
 
     <!-- Settings -->
     <div class="train-section" id="train-settings">
+      <div class="form-group">
+        <label>修改机器人名字</label>
+        <input type="text" id="adminBotName" placeholder="输入新名字">
+        <button class="btn" style="margin-top:8px" onclick="changeBotName()">修改名字 ✏️</button>
+      </div>
       <div class="form-group">
         <label>修改管理密码</label>
         <div style="display:flex;gap:8px;">
@@ -1113,7 +1114,6 @@ function clearChat() {
 
 // ========== SETTINGS ==========
 function openSettings() {
-  document.getElementById('botName').value = botConfig.botName;
   document.getElementById('geminiKey').value = botConfig.geminiKey;
   document.getElementById('botPersonality').value = botConfig.personality;
   document.getElementById('settingsModal').classList.add('open');
@@ -1124,11 +1124,9 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  botConfig.botName = document.getElementById('botName').value.trim() || '略略略大王';
   botConfig.geminiKey = document.getElementById('geminiKey').value.trim();
   botConfig.personality = document.getElementById('botPersonality').value.trim() || DEFAULT_CONFIG.personality;
   saveConfig();
-  document.querySelector('.header-info h1').textContent = botConfig.botName;
   closeSettings();
   toast('设置已保存 ✅');
 }
@@ -1158,6 +1156,7 @@ function checkAdminPin() {
 
 function openAdminPanel() {
   document.getElementById('adminModal').classList.add('open');
+  document.getElementById('adminBotName').value = botConfig.botName;
   switchTrainTab('add');
   renderTrainingList();
 }
@@ -1244,6 +1243,16 @@ function changeAdminPin() {
   document.getElementById('newAdminPin').value = '';
   document.getElementById('confirmAdminPin').value = '';
   toast('管理密码已修改 🔐');
+}
+
+function changeBotName() {
+  const name = document.getElementById('adminBotName').value.trim();
+  if (!name) { toast('请输入新的名字', 'error'); return; }
+  botConfig.botName = name;
+  saveConfig();
+  document.querySelector('.header-info h1').textContent = name;
+  document.getElementById('adminBotName').value = '';
+  toast('机器人名字已修改为：' + name + ' ✨');
 }
 
 // ========== TOAST ==========
