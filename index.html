@@ -331,6 +331,48 @@
   }
   .modal .btn:hover { transform: scale(1.02); }
 
+  /* ===== Admin/Training ===== */
+  .admin-btn { background: rgba(251,191,36,0.15); color: var(--gold); }
+  .admin-btn:hover { background: rgba(251,191,36,0.25); }
+  .train-item {
+    display: flex; gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    align-items: flex-start;
+  }
+  .train-item:last-child { border-bottom: none; }
+  .train-item .ti-q {
+    font-size: 13px; font-weight: 500; color: var(--accent3);
+  }
+  .train-item .ti-a {
+    font-size: 13px; color: var(--text-dim); margin-top: 2px;
+  }
+  .train-item .ti-actions {
+    display: flex; gap: 4px; flex-shrink: 0; margin-left: auto;
+  }
+  .train-item .ti-actions button {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 14px; padding: 2px 6px;
+    border-radius: 6px; transition: all 0.2s;
+  }
+  .train-item .ti-actions button:hover { background: rgba(255,255,255,0.06); }
+  .train-item .ti-actions .ti-del:hover { color: var(--red); }
+  .train-tabs {
+    display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 14px;
+  }
+  .train-tab {
+    padding: 8px 16px; font-size: 13px; cursor: pointer;
+    color: var(--text-dim); border-bottom: 2px solid transparent;
+    transition: all 0.2s; margin-bottom: -1px;
+  }
+  .train-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .train-tab:hover { color: var(--text); }
+  .train-section { display: none; }
+  .train-section.active { display: block; }
+  .empty-train {
+    text-align: center; padding: 20px; color: var(--text-dim); font-size: 13px;
+  }
+
   /* ===== Responsive ===== */
   @media (max-width: 480px) {
     .header { padding: 12px 14px; }
@@ -362,6 +404,7 @@
     <div class="status"><span class="dot"></span> 在线 · 社恐中，但欢迎来聊</div>
   </div>
   <div class="header-actions">
+    <button class="header-btn admin-btn" onclick="openAdmin()" title="训练">🧠</button>
     <button class="header-btn" onclick="clearChat()" title="清空聊天">🗑️</button>
     <button class="header-btn" onclick="openSettings()" title="设置">⚙️</button>
   </div>
@@ -425,15 +468,78 @@
   </div>
 </div>
 
+<!-- ===== Admin Modal (PIN) ===== -->
+<div class="modal-overlay" id="pinModal" onclick="if(event.target===this)closeModal('pinModal')">
+  <div class="modal" style="max-width:340px">
+    <button class="close-btn" onclick="closeModal('pinModal')">✕</button>
+    <h3>🔐 管理员验证</h3>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">请输入管理密码</p>
+    <div class="form-group">
+      <input type="password" id="adminPinInput" maxlength="6" inputmode="numeric" placeholder="4-6位数字密码" onkeydown="if(event.key==='Enter')checkAdminPin()" style="text-align:center;font-size:20px;letter-spacing:6px;">
+    </div>
+    <div id="pinError" style="text-align:center;color:var(--red);font-size:13px;min-height:20px;"></div>
+    <button class="btn" onclick="checkAdminPin()">验证</button>
+    <button class="btn" style="margin-top:8px;background:rgba(255,255,255,0.06);color:var(--text-dim);" onclick="closeModal('pinModal')">取消</button>
+  </div>
+</div>
+
+<!-- ===== Admin Modal (Training) ===== -->
+<div class="modal-overlay" id="adminModal" onclick="if(event.target===this)closeModal('adminModal')">
+  <div class="modal" style="max-width:500px;max-height:80vh;overflow-y:auto;">
+    <button class="close-btn" onclick="closeModal('adminModal')">✕</button>
+    <h3>🧠 训练略略略大王</h3>
+
+    <div class="train-tabs">
+      <div class="train-tab active" data-ttab="add" onclick="switchTrainTab('add')">➕ 添加</div>
+      <div class="train-tab" data-ttab="list" onclick="switchTrainTab('list')">📋 管理</div>
+      <div class="train-tab" data-ttab="settings" onclick="switchTrainTab('settings')">🔐 安全</div>
+    </div>
+
+    <!-- Add -->
+    <div class="train-section active" id="train-add">
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">教机器人怎么回答问题，别人问同样的话它会按你教的回答</p>
+      <div class="form-group">
+        <label>别人问什么（关键词）</label>
+        <input type="text" id="trainQuestion" placeholder="例如：今天心情怎么样">
+      </div>
+      <div class="form-group">
+        <label>机器人怎么回答</label>
+        <textarea id="trainAnswer" rows="3" placeholder="例如：今天心情爆炸好！刚打了一把王者16杀 🤣"></textarea>
+      </div>
+      <button class="btn" onclick="saveTraining()">💾 保存训练</button>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">💡 提示：问题写关键词即可，别人问的话只要包含这个词就会按你教的回答</p>
+    </div>
+
+    <!-- List -->
+    <div class="train-section" id="train-list">
+      <div id="trainingList"></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="train-section" id="train-settings">
+      <div class="form-group">
+        <label>修改管理密码</label>
+        <div style="display:flex;gap:8px;">
+          <input type="password" id="newAdminPin" maxlength="6" inputmode="numeric" placeholder="新密码" style="flex:1;">
+          <input type="password" id="confirmAdminPin" maxlength="6" inputmode="numeric" placeholder="确认密码" style="flex:1;">
+        </div>
+      </div>
+      <button class="btn" onclick="changeAdminPin()">修改密码 🔑</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ========== CONFIG ==========
 const CONFIG_KEY = 'chatbot_config';
 const CHAT_KEY = 'chatbot_history';
+const TRAIN_KEY = 'chatbot_training';
 
 const DEFAULT_CONFIG = {
   botName: '略略略大王',
   personality: '和蔼可亲，幽默风趣，有点社恐，王者百星，喜欢打羽毛球',
-  geminiKey: ''
+  geminiKey: '',
+  adminPin: '8888'
 };
 
 function loadConfig() {
@@ -552,12 +658,42 @@ const responses = {
   ]
 };
 
+// ========== TRAINING DATA ==========
+function loadTraining() {
+  try {
+    const raw = localStorage.getItem(TRAIN_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function saveTrainingData() {
+  localStorage.setItem(TRAIN_KEY, JSON.stringify(trainingData));
+}
+let trainingData = loadTraining();
+
+function findTrainingMatch(text) {
+  const lower = text.toLowerCase();
+  for (const item of trainingData) {
+    const keywords = item.q.toLowerCase().split(/[,，、\s]+/).filter(k => k.trim());
+    // If any keyword is found in the input, return the answer
+    for (const kw of keywords) {
+      if (kw && lower.includes(kw)) {
+        return item.a;
+      }
+    }
+  }
+  return null;
+}
+
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function generateResponse(input) {
   const text = input.trim().toLowerCase();
+
+  // Check training data first
+  const trained = findTrainingMatch(input);
+  if (trained) return trained;
 
   // Hello / greetings
   if (/^(你好|嗨|hi|hello|hey|在吗|在不在|嗨喽|哈喽)/i.test(text)) {
@@ -639,6 +775,10 @@ function generateResponse(input) {
 
 // ========== GEMINI API ==========
 async function callGemini(input) {
+  // Check training data first (even with Gemini enabled)
+  const trained = findTrainingMatch(input);
+  if (trained) return trained;
+
   const key = botConfig.geminiKey;
   if (!key) return null;
 
@@ -820,6 +960,119 @@ function saveSettings() {
   document.querySelector('.header-info h1').textContent = botConfig.botName;
   closeSettings();
   toast('设置已保存 ✅');
+}
+
+// ========== ADMIN / TRAINING SYSTEM ==========
+function openAdmin() {
+  document.getElementById('adminPinInput').value = '';
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('pinModal').classList.add('open');
+  setTimeout(() => document.getElementById('adminPinInput').focus(), 200);
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function checkAdminPin() {
+  const pin = document.getElementById('adminPinInput').value.trim();
+  if (pin === botConfig.adminPin) {
+    closeModal('pinModal');
+    openAdminPanel();
+  } else {
+    document.getElementById('pinError').textContent = '❌ 密码错误';
+    document.getElementById('adminPinInput').value = '';
+  }
+}
+
+function openAdminPanel() {
+  document.getElementById('adminModal').classList.add('open');
+  switchTrainTab('add');
+  renderTrainingList();
+}
+
+function switchTrainTab(tab) {
+  document.querySelectorAll('.train-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.train-tab[data-ttab="' + tab + '"]').classList.add('active');
+  document.querySelectorAll('.train-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('train-' + tab).classList.add('active');
+  if (tab === 'list') renderTrainingList();
+}
+
+function saveTraining() {
+  const q = document.getElementById('trainQuestion').value.trim();
+  const a = document.getElementById('trainAnswer').value.trim();
+  if (!q) { toast('请输入问题或关键词', 'error'); return; }
+  if (!a) { toast('请输入回答', 'error'); return; }
+
+  // Check if already exists
+  const existing = trainingData.findIndex(t => t.q.toLowerCase() === q.toLowerCase());
+  if (existing >= 0) {
+    if (!confirm('已存在相同关键词，是否覆盖？')) return;
+    trainingData[existing].a = a;
+    trainingData[existing].updatedAt = Date.now();
+  } else {
+    trainingData.push({ q, a, createdAt: Date.now(), updatedAt: Date.now() });
+  }
+
+  saveTrainingData();
+  document.getElementById('trainQuestion').value = '';
+  document.getElementById('trainAnswer').value = '';
+  renderTrainingList();
+  toast('训练已保存 ✅ 共' + trainingData.length + '条');
+}
+
+function deleteTraining(idx) {
+  if (!confirm('确定删除这条训练吗？')) return;
+  trainingData.splice(idx, 1);
+  saveTrainingData();
+  renderTrainingList();
+  toast('已删除');
+}
+
+function editTraining(idx) {
+  const item = trainingData[idx];
+  document.getElementById('trainQuestion').value = item.q;
+  document.getElementById('trainAnswer').value = item.a;
+  switchTrainTab('add');
+  // Remove old one, will be overwritten on save
+  trainingData.splice(idx, 1);
+  toast('编辑中，修改后点保存即可');
+}
+
+function renderTrainingList() {
+  const el = document.getElementById('trainingList');
+  if (trainingData.length === 0) {
+    el.innerHTML = '<div class="empty-train">还没有训练数据，去「添加」标签页教机器人说话吧 🧠</div>';
+    return;
+  }
+  el.innerHTML = trainingData.map((item, idx) => `
+    <div class="train-item">
+      <div style="flex:1;min-width:0;">
+        <div class="ti-q">🗣️ ${item.q}</div>
+        <div class="ti-a">🤖 ${item.a}</div>
+      </div>
+      <div class="ti-actions">
+        <button onclick="editTraining(${idx})" title="编辑">✏️</button>
+        <button class="ti-del" onclick="deleteTraining(${idx})" title="删除">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function changeAdminPin() {
+  const newPin = document.getElementById('newAdminPin').value.trim();
+  const confirmPin = document.getElementById('confirmAdminPin').value.trim();
+  if (!newPin) { toast('请输入新密码', 'error'); return; }
+  if (newPin.length < 4 || newPin.length > 6 || !/^\d+$/.test(newPin)) {
+    toast('密码必须为4-6位数字', 'error'); return;
+  }
+  if (newPin !== confirmPin) { toast('两次密码不一致', 'error'); return; }
+  botConfig.adminPin = newPin;
+  saveConfig();
+  document.getElementById('newAdminPin').value = '';
+  document.getElementById('confirmAdminPin').value = '';
+  toast('管理密码已修改 🔐');
 }
 
 // ========== TOAST ==========
