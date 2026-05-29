@@ -446,8 +446,6 @@
 
 <!-- ===== Suggestions ===== -->
 <div class="suggestions" id="suggestions">
-  <button onclick="quickChat('在干嘛呢')">在干嘛呢</button>
-  <button onclick="quickChat('教我玩王者')">教我玩王者</button>
   <button onclick="quickChat('讲个笑话')">讲个笑话</button>
   <button onclick="quickChat('打羽毛球吗')">打羽毛球吗</button>
   <button onclick="quickChat('你社恐吗')">你社恐吗</button>
@@ -473,14 +471,6 @@
         <input type="text" id="bgColorInput" placeholder="#0f0f1a" style="flex:1;font-family:monospace;">
         <button class="btn" style="padding:8px 12px;font-size:12px;flex-shrink:0;" onclick="resetBgColor()">重置</button>
       </div>
-    </div>
-    <div class="form-group">
-      <label>AI 接口密钥（可选，填了回复更智能）</label>
-      <input type="password" id="geminiKey" placeholder="输入 Gemini API Key">
-    </div>
-    <div class="form-group">
-      <label>性格设置</label>
-      <textarea id="botPersonality" rows="3">外表高冷其实和蔼可亲，幽默风趣，有点社恐，王者巅峰2100，中路法王，喜欢打羽毛球(中羽4级)，戴眼镜，男大学生，喜欢唱歌</textarea>
     </div>
     <button class="btn" onclick="saveSettings()">保存设置</button>
   </div>
@@ -1134,8 +1124,6 @@ function clearChat() {
 
 // ========== SETTINGS ==========
 function openSettings() {
-  document.getElementById('geminiKey').value = botConfig.geminiKey;
-  document.getElementById('botPersonality').value = botConfig.personality;
   const curBg = botConfig.bgColor || '#0f0f1a';
   document.getElementById('bgColorPicker').value = curBg;
   document.getElementById('bgColorInput').value = curBg;
@@ -1165,8 +1153,6 @@ function saveSettings() {
   if (bgColor && /^#[0-9a-fA-F]{6}$/.test(bgColor)) {
     applyBgColor(bgColor);
   }
-  botConfig.geminiKey = document.getElementById('geminiKey').value.trim();
-  botConfig.personality = document.getElementById('botPersonality').value.trim() || DEFAULT_CONFIG.personality;
   saveConfig();
   closeSettings();
   toast('设置已保存 ✅');
