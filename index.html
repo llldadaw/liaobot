@@ -1425,11 +1425,12 @@ let musicCtx = null; let musicCurrent = 0; let musicPlaying = false; let musicId
 function initMusic() {
   if (!musicCtx) {
     musicCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (!musicCtx._gain) {
-      musicCtx._gain = musicCtx.createGain();
-      musicCtx._gain.gain.value = 0.08;
-      musicCtx._gain.connect(musicCtx.destination);
-    }
+    musicCtx._gain = musicCtx.createGain();
+    musicCtx._gain.gain.value = 0.15;
+    musicCtx._gain.connect(musicCtx.destination);
+  }
+  if (musicCtx.state === 'suspended') {
+    musicCtx.resume();
   }
 }
 
@@ -1454,7 +1455,7 @@ function playNote() {
   const gain = musicCtx.createGain();
   osc.type = ['sine','triangle','sine','triangle','sine'][musicCurrent % 5];
   osc.frequency.value = freq;
-  gain.gain.value = 0.06;
+  gain.gain.value = 0.12;
   gain.gain.exponentialRampToValueAtTime(0.001, musicCtx.currentTime + song.speed * 0.8);
   osc.connect(gain);
   gain.connect(musicCtx._gain);
