@@ -11,6 +11,7 @@
 
   :root {
     --bg: #0f0f1a;
+    --user-bg: #0f0f1a;
     --card: #1a1a2e;
     --card-light: #222244;
     --text: #e8e8f0;
@@ -28,19 +29,19 @@
 
   body {
     font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg);
+    background: var(--user-bg);
     color: var(--text);
     min-height: 100vh;
     overflow: hidden;
   }
 
-  /* ===== Animated Background ===== */
   .bg-animation {
     position: fixed;
     inset: 0;
     overflow: hidden;
     z-index: 0;
     pointer-events: none;
+    opacity: 0.4;
   }
   .bg-animation span {
     position: absolute;
@@ -123,12 +124,19 @@
   /* ===== Chat Messages ===== */
   .chat-area {
     position: relative; z-index: 5;
-    height: calc(100vh - 140px);
+    height: calc(100vh - 180px);
     overflow-y: auto; padding: 16px;
     scroll-behavior: smooth;
   }
   .chat-area::-webkit-scrollbar { width: 4px; }
   .chat-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  @media (min-width: 768px) {
+    .chat-area { padding: 20px 24px; }
+    .header { padding: 16px 28px; }
+    .input-area { padding: 12px 24px 20px; }
+    .container { max-width: 800px; margin: 0 auto; }
+  }
 
   .msg {
     display: flex; gap: 10px; margin-bottom: 16px;
@@ -378,7 +386,7 @@
   /* ===== Responsive ===== */
   @media (max-width: 480px) {
     .header { padding: 12px 14px; }
-    .chat-area { padding: 12px; height: calc(100vh - 130px); }
+    .chat-area { padding: 12px; height: calc(100vh - 170px); }
     .msg .bubble { max-width: 85%; font-size: 13px; }
     .welcome-msg { padding: 24px 12px 12px; }
     .welcome-msg .big-avatar { width: 64px; height: 64px; font-size: 28px; }
@@ -397,13 +405,14 @@
 
 <!-- ===== Header ===== -->
 <div class="header">
-  <div class="avatar">
-    🤖
+  <div class="avatar" id="botAvatar">
+    <img id="avatarImg" src="猫猫图片.bmp" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:none;">
+    <span id="avatarFallback" style="font-size:22px;">🤖</span>
     <span class="online-dot"></span>
   </div>
   <div class="header-info">
     <h1>略略略大王</h1>
-    <div class="status"><span class="dot"></span> 在线 · 社恐中，但欢迎来聊</div>
+    <div class="status"><span class="dot"></span> 在线 · 一个爱打王者的男大学生 👦</div>
   </div>
   <div class="header-actions">
     <button class="header-btn admin-btn" onclick="openAdmin()" title="训练">🧠</button>
@@ -415,11 +424,14 @@
 <!-- ===== Chat Area ===== -->
 <div class="chat-area" id="chatArea">
   <div class="welcome-msg">
-    <div class="big-avatar">🤖</div>
+    <div class="big-avatar" id="welcomeAvatar" style="overflow:hidden;">
+      <img id="welcomeAvatarImg" src="猫猫图片.bmp" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
+      <span id="welcomeAvatarFallback">🤖</span>
+    </div>
     <h2>嘿！我是略略略大王 👑</h2>
     <p>
-     王者巅峰2100 🎮 · 羽毛球中羽4级 🏸<br>
-      戴眼镜的大学生 · 表面高冷实际和蔼 😎<br>
+      王者巅峰2100 🎮 · 羽毛球中羽4级 🏸<br>
+      一个戴眼镜的男大学生 · 表面高冷实际和蔼 😎<br>
       喜欢唱歌 · 社恐但会接话 🤣
     </p>
     <div class="tags">
@@ -455,12 +467,20 @@
     <button class="close-btn" onclick="closeSettings()">✕</button>
     <h3>⚙️ 设置</h3>
     <div class="form-group">
+      <label>聊天背景颜色</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="color" id="bgColorPicker" value="#0f0f1a" style="width:48px;height:48px;border:none;border-radius:8px;cursor:pointer;background:none;">
+        <input type="text" id="bgColorInput" placeholder="#0f0f1a" style="flex:1;font-family:monospace;">
+        <button class="btn" style="padding:8px 12px;font-size:12px;flex-shrink:0;" onclick="resetBgColor()">重置</button>
+      </div>
+    </div>
+    <div class="form-group">
       <label>AI 接口密钥（可选，填了回复更智能）</label>
       <input type="password" id="geminiKey" placeholder="输入 Gemini API Key">
     </div>
     <div class="form-group">
       <label>性格设置</label>
-      <textarea id="botPersonality" rows="3">外表高冷其实和蔼可亲，幽默风趣，有点社恐，王者巅峰2100，中路法王，喜欢打羽毛球(中羽4级)，戴眼镜，大学生，喜欢唱歌</textarea>
+      <textarea id="botPersonality" rows="3">外表高冷其实和蔼可亲，幽默风趣，有点社恐，王者巅峰2100，中路法王，喜欢打羽毛球(中羽4级)，戴眼镜，男大学生，喜欢唱歌</textarea>
     </div>
     <button class="btn" onclick="saveSettings()">保存设置</button>
   </div>
@@ -540,7 +560,7 @@ const TRAIN_KEY = 'chatbot_training';
 
 const DEFAULT_CONFIG = {
   botName: '略略略大王',
-  personality: '外表高冷其实和蔼可亲，幽默风趣，有点社恐，王者巅峰2100，中路法王，喜欢打羽毛球(中羽4级)，戴眼镜，大学生，喜欢唱歌',
+  personality: '外表高冷其实和蔼可亲，幽默风趣，有点社恐，王者巅峰2100，中路法王，喜欢打羽毛球(中羽4级)，戴眼镜，男大学生，喜欢唱歌',
   geminiKey: '',
   adminPin: '8888'
 };
@@ -1021,7 +1041,7 @@ function addMessage(text, isUser) {
   msgDiv.className = 'msg ' + (isUser ? 'user' : 'bot');
 
   msgDiv.innerHTML = `
-    <div class="av">${isUser ? '😊' : '🤖'}</div>
+    <div class="av" style="overflow:hidden;">${isUser ? '😊' : '<img src=\'猫猫图片.bmp\' style=\'width:100%;height:100%;object-fit:cover;border-radius:50%;\' alt=\'bot\'>'}</div>
     <div class="bubble">
       ${text}
       <span class="time">${formatTime()}</span>
@@ -1039,7 +1059,7 @@ function showTyping() {
   msgDiv.className = 'msg bot';
   msgDiv.id = 'typingMsg';
   msgDiv.innerHTML = `
-    <div class="av">🤖</div>
+    <div class="av" style="overflow:hidden;"><img src='猫猫图片.bmp' style='width:100%;height:100%;object-fit:cover;border-radius:50%;' alt='bot'></div>
     <div class="bubble">
       <div class="typing-indicator">
         <span></span><span></span><span></span>
@@ -1116,6 +1136,9 @@ function clearChat() {
 function openSettings() {
   document.getElementById('geminiKey').value = botConfig.geminiKey;
   document.getElementById('botPersonality').value = botConfig.personality;
+  const curBg = botConfig.bgColor || '#0f0f1a';
+  document.getElementById('bgColorPicker').value = curBg;
+  document.getElementById('bgColorInput').value = curBg;
   document.getElementById('settingsModal').classList.add('open');
 }
 
@@ -1123,12 +1146,75 @@ function closeSettings() {
   document.getElementById('settingsModal').classList.remove('open');
 }
 
+function applyBgColor(color) {
+  document.documentElement.style.setProperty('--user-bg', color);
+  botConfig.bgColor = color;
+  saveConfig();
+}
+
+function resetBgColor() {
+  const def = '#0f0f1a';
+  document.getElementById('bgColorPicker').value = def;
+  document.getElementById('bgColorInput').value = def;
+  applyBgColor(def);
+  toast('背景已重置为默认');
+}
+
 function saveSettings() {
+  const bgColor = document.getElementById('bgColorInput').value.trim();
+  if (bgColor && /^#[0-9a-fA-F]{6}$/.test(bgColor)) {
+    applyBgColor(bgColor);
+  }
   botConfig.geminiKey = document.getElementById('geminiKey').value.trim();
   botConfig.personality = document.getElementById('botPersonality').value.trim() || DEFAULT_CONFIG.personality;
   saveConfig();
   closeSettings();
   toast('设置已保存 ✅');
+}
+
+// Sync color picker with text input
+function initBgColorSync() {
+  const picker = document.getElementById('bgColorPicker');
+  const input = document.getElementById('bgColorInput');
+  if (picker && input) {
+    picker.addEventListener('input', function() {
+      input.value = this.value;
+    });
+    input.addEventListener('input', function() {
+      if (/^#[0-9a-fA-F]{6}$/.test(this.value)) {
+        picker.value = this.value;
+      }
+    });
+  }
+}
+
+// Apply saved background color on load
+function loadBgColor() {
+  const color = botConfig.bgColor || '#0f0f1a';
+  if (/^#[0-9a-fA-F]{6}$/.test(color)) {
+    document.documentElement.style.setProperty('--user-bg', color);
+  }
+}
+
+// Load avatar image
+function loadAvatar() {
+  const img = document.getElementById('avatarImg');
+  const fallback = document.getElementById('avatarFallback');
+  const welcomeImg = document.getElementById('welcomeAvatarImg');
+  const welcomeFallback = document.getElementById('welcomeAvatarFallback');
+
+  if (img) {
+    img.onload = function() {
+      img.style.display = 'block';
+      if (fallback) fallback.style.display = 'none';
+      if (welcomeImg) { welcomeImg.style.display = 'block'; welcomeImg.src = '猫猫图片.bmp'; }
+      if (welcomeFallback) welcomeFallback.style.display = 'none';
+    };
+    img.onerror = function() {
+      img.style.display = 'none';
+      if (fallback) fallback.style.display = 'inline';
+    };
+  }
 }
 
 // ========== ADMIN / TRAINING SYSTEM ==========
@@ -1269,6 +1355,11 @@ function toast(msg, type) {
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelector('.header-info h1').textContent = botConfig.botName;
 
+  // Load avatar and background color
+  loadBgColor();
+  loadAvatar();
+  initBgColorSync();
+
   // Restore chat history
   if (chatHistory.length > 0) {
     document.querySelector('.welcome-msg').style.display = 'none';
@@ -1278,7 +1369,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const time = msg.time ? new Date(msg.time) : new Date();
       const timeStr = String(time.getHours()).padStart(2,'0') + ':' + String(time.getMinutes()).padStart(2,'0');
       msgDiv.innerHTML = `
-        <div class="av">${msg.role === 'user' ? '😊' : '🤖'}</div>
+        <div class="av" style="overflow:hidden;">${msg.role === 'user' ? '😊' : '<img src=\'猫猫图片.bmp\' style=\'width:100%;height:100%;object-fit:cover;border-radius:50%;\' alt=\'bot\'>'}</div>
         <div class="bubble">
           ${msg.text}
           <span class="time">${timeStr}</span>
